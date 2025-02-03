@@ -24,6 +24,8 @@ export const PromptingCard = () => {
     const [isHandlingFile, setIsHandlingFile] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isInputInvalid = !inputValue || inputValue.trim().length < 10;
+    const [isComposing, setIsComposing] = useState(false);
+    const imageRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const handleEscapeKey = (e: KeyboardEvent) => {
@@ -92,6 +94,9 @@ export const PromptingCard = () => {
     };
 
     const handleRemoveImage = (imageContext: ImageMessageContext) => {
+        if (imageRef && imageRef.current) {
+            imageRef.current.value = '';
+        }
         setSelectedImages(selectedImages.filter((f) => f !== imageContext));
     };
 
@@ -244,8 +249,13 @@ export const PromptingCard = () => {
                                         setInputValue(e.target.value);
                                         adjustTextareaHeight();
                                     }}
+                                    onCompositionStart={() => setIsComposing(true)}
+                                    onCompositionEnd={(e) => {
+                                        setIsComposing(false);
+                                        setInputValue(e.currentTarget.value);
+                                    }}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                        if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
                                             e.preventDefault();
                                             handleSubmit();
                                         }
@@ -297,6 +307,7 @@ export const PromptingCard = () => {
                                                 <input
                                                     id="image-input"
                                                     type="file"
+                                                    ref={imageRef}
                                                     accept="image/*"
                                                     multiple
                                                     className="hidden"

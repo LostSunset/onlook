@@ -11,6 +11,7 @@ import { ChatManager } from './chat';
 import { CodeManager } from './code';
 import { CopyManager } from './copy';
 import { ElementManager } from './element';
+import { ErrorManager } from './error';
 import { GroupManager } from './group';
 import { HistoryManager } from './history';
 import { ImageManager } from './image';
@@ -21,6 +22,7 @@ import { ProjectInfoManager } from './projectinfo';
 import { StyleManager } from './style';
 import { TextEditingManager } from './text';
 import { WebviewManager } from './webview';
+import { PagesManager } from './pages';
 
 export class EditorEngine {
     private plansOpen: boolean = false;
@@ -31,6 +33,8 @@ export class EditorEngine {
     private webviewManager: WebviewManager;
     private overlayManager: OverlayManager;
     private codeManager: CodeManager;
+    private pagesManager: PagesManager;
+    private errorManager: ErrorManager;
 
     private astManager: AstManager = new AstManager(this);
     private historyManager: HistoryManager = new HistoryManager(this);
@@ -52,6 +56,8 @@ export class EditorEngine {
         this.webviewManager = new WebviewManager(this, this.projectsManager);
         this.overlayManager = new OverlayManager(this);
         this.codeManager = new CodeManager(this, this.projectsManager);
+        this.pagesManager = new PagesManager(this, this.projectsManager);
+        this.errorManager = new ErrorManager(this, this.projectsManager);
     }
 
     get elements() {
@@ -114,6 +120,10 @@ export class EditorEngine {
     get isPlansOpen() {
         return this.plansOpen;
     }
+    get errors() {
+        return this.errorManager;
+    }
+
     set mode(mode: EditorMode) {
         this.editorMode = mode;
     }
@@ -129,12 +139,15 @@ export class EditorEngine {
         }
     }
 
-    dispose() {
-        // Clear UI state
-        this.clear();
+    get pages() {
+        return this.pagesManager;
+    }
 
-        // Clean up all managers
+    dispose() {
+        this.overlay.clear();
+        this.elements.clear();
         this.webviews.deregisterAll();
+        this.errors.clear();
         this.chatManager?.dispose();
         this.historyManager?.clear();
         this.elementManager?.clear();
@@ -156,9 +169,10 @@ export class EditorEngine {
         this.editorPanelTab = EditorTabValue.STYLES;
     }
 
-    clear() {
+    clearUI() {
         this.overlay.clear();
         this.elements.clear();
+        this.webviews.deselectAll();
     }
 
     inspect() {
